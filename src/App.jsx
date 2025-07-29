@@ -694,7 +694,6 @@ const ChatInput = React.memo(({ input, setInput, onSend, isLoading, isDark }) =>
 
 // ✅ Aquí empieza el componente principal
 export default function App() {
-  console.log("🔑 API Key desde import.meta.env:", import.meta.env.VITE_OPENROUTER_API_KEY);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
