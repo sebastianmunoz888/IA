@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useAppContext, CONSULTATION_TYPES } from './context/AppContext.jsx';
+import APIDebugChecker from './APIDebug.jsx';
 
 import {
   Menu, Search, Send, Scale, Sun, Moon, ChevronDown, Users,
