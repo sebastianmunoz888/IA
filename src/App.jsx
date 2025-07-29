@@ -521,7 +521,7 @@ const ChatWindow = React.memo(({ messages, isLoading, isDark }) => {
           <div className="space-y-6 max-w-4xl mx-auto">
             {messages.map((msg, idx) => (
               <div 
-                key={`${msg.type}-${idx}-${msg.timestamp || idx}`} // ✅ Key más estable
+                key={`${msg.type}-${idx}-${msg.timestamp || idx}`}
                 className={`flex animate-in slide-in-from-bottom-4 duration-500 ${
                   msg.type === 'user' ? 'justify-end' : 
                   msg.type === 'system' ? 'justify-center' : 'justify-start'
@@ -580,9 +580,8 @@ const ChatWindow = React.memo(({ messages, isLoading, isDark }) => {
 const ChatInput = React.memo(({ input, setInput, onSend, isLoading, isDark }) => {
   const [isFocused, setIsFocused] = useState(false);
   const { currentConsultationType } = useAppContext();
-  const textareaRef = useRef(null); // ✅ Referencia para mantener el foco
+  const textareaRef = useRef(null);
 
-  // ✅ useCallback para evitar re-renders
   const handleKeyDown = useCallback((e) => {
     if (e.key === "Enter" && !e.shiftKey && !isLoading) {
       e.preventDefault();
@@ -631,7 +630,7 @@ const ChatInput = React.memo(({ input, setInput, onSend, isLoading, isDark }) =>
         }`}>
           <div className="flex-1 relative">
             <textarea
-              ref={textareaRef} // ✅ Referencia para controlar el foco
+              ref={textareaRef}
               className={`w-full px-6 py-4 rounded-2xl resize-none transition-all duration-300 ${
                 isDark 
                   ? 'bg-slate-800/50 border-2 border-slate-700 text-white placeholder-slate-400 focus:border-blue-500 focus:bg-slate-800' 
@@ -639,10 +638,10 @@ const ChatInput = React.memo(({ input, setInput, onSend, isLoading, isDark }) =>
               } focus:ring-4 focus:ring-blue-500/20 focus:outline-none backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed`}
               placeholder={isLoading ? "Procesando consulta..." : currentConsultationType.placeholder}
               value={input}
-              onChange={handleInputChange} // ✅ useCallback
-              onKeyDown={handleKeyDown} // ✅ useCallback
-              onFocus={handleFocus} // ✅ useCallback
-              onBlur={handleBlur} // ✅ useCallback
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
               disabled={isLoading}
               rows="1"
               style={{ minHeight: '56px', maxHeight: '120px' }}
@@ -716,23 +715,35 @@ export default function App() {
   const toggleSidebar = useCallback(() => setSidebarOpen(!sidebarOpen), [sidebarOpen]);
   const toggleDark = useCallback(() => setIsDark(!isDark), [isDark]);
 
-  // ✅ Función de envío optimizada con useCallback
+  // ✅ Función API corregida - usando la constante OPENROUTER_API_KEY
   const sendMessageToAPI = useCallback(async (userMessage) => {
-  try {
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': window.location.origin,
-        'X-Title': 'Asistente Legal IA'
-      },
-      body: JSON.stringify({
-        model: 'anthropic/claude-3.5-sonnet',
-        messages: [
-          {
-            role: 'system',
-            content: `${currentConsultationType.prompt}
+    // ✅ Verificar que la API key existe
+    if (!OPENROUTER_API_KEY) {
+      console.error('OPENROUTER_API_KEY no está definida');
+      return 'Error: API key no configurada. Por favor, configura VITE_OPENROUTER_API_KEY en las variables de entorno.';
+    }
+
+    try {
+      console.log('Enviando mensaje a OpenRouter API...', {
+        hasApiKey: !!OPENROUTER_API_KEY,
+        apiKeyLength: OPENROUTER_API_KEY?.length,
+        model: 'anthropic/claude-3.5-sonnet'
+      });
+
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`, // ✅ Usar la constante
+          'Content-Type': 'application/json',
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'Asistente Legal IA'
+        },
+        body: JSON.stringify({
+          model: 'anthropic/claude-3.5-sonnet',
+          messages: [
+            {
+              role: 'system',
+              content: `${currentConsultationType.prompt}
 
 Especialidades:
 - Derecho Civil
@@ -749,28 +760,52 @@ ${currentConsultationType.id === 'contract' ? 'IMPORTANTE: Proporciona estructur
 
 Responde de manera clara, estructurada y profesional. Usa formato markdown cuando sea apropiado para mejorar la legibilidad.
 Siempre menciona que tus respuestas son orientativas y recomiendan consultar con un abogado para casos específicos.`
-          },
-          {
-            role: 'user',
-            content: userMessage
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: currentConsultationType.id === 'quick' ? 300 : 1000
-      })
-    });
+            },
+            {
+              role: 'user',
+              content: userMessage
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: currentConsultationType.id === 'quick' ? 300 : 1000
+        })
+      });
 
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status}`);
+      console.log('Respuesta de la API:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error de la API:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
+        throw new Error(`API Error: ${response.status} - ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('Datos recibidos:', data);
+      
+      return data.choices[0].message.content;
+    } catch (error) {
+      console.error('Error calling OpenRouter API:', error);
+      
+      // ✅ Mensaje de error más específico
+      if (error.message.includes('401')) {
+        return 'Error de autenticación: La API key parece ser inválida o ha expirado. Por favor, verifica tu configuración en las variables de entorno.';
+      } else if (error.message.includes('403')) {
+        return 'Error de permisos: No tienes acceso a este modelo o has excedido tu cuota.';
+      } else if (error.message.includes('429')) {
+        return 'Error de límite de velocidad: Has hecho demasiadas solicitudes. Espera un momento antes de intentar nuevamente.';
+      } else {
+        return `Error al procesar tu consulta: ${error.message}. Por favor, intenta nuevamente.`;
+      }
     }
-
-    const data = await response.json();
-    return data.choices[0].message.content;
-  } catch (error) {
-    console.error('Error calling OpenRouter API:', error);
-    return 'Lo siento, ha ocurrido un error al procesar tu consulta. Por favor, intenta nuevamente o verifica la configuración de la API.';
-  }
-}, [currentConsultationType]);
+  }, [currentConsultationType]);
 
   // ✅ Función handleSend optimizada
   const handleSend = useCallback(async () => {
@@ -781,10 +816,11 @@ Siempre menciona que tus respuestas son orientativas y recomiendan consultar con
       setMessages(prev => [...prev, { 
         type: 'user', 
         text: userMessage,
-        timestamp: Date.now() // ✅ Timestamp para keys estables
+        timestamp: Date.now()
       }]);
       
       setIsLoading(true);
+      setInput(''); // ✅ Limpiar input inmediatamente
       
       const tempId = Date.now();
       const loadingMessage = currentConsultationType.id === 'quick' 
@@ -819,11 +855,12 @@ Siempre menciona que tus respuestas son orientativas y recomiendan consultar con
             : msg
         ));
       } catch (error) {
+        console.error('Error en handleSend:', error);
         setMessages(prev => prev.map(msg => 
           msg.id === tempId 
             ? { 
                 type: 'ai', 
-                text: 'Ha ocurrido un error al procesar tu consulta. Por favor, verifica tu conexión e intenta nuevamente.',
+                text: 'Ha ocurrido un error inesperado. Por favor, verifica tu conexión e intenta nuevamente.',
                 isLoading: false,
                 timestamp: Date.now()
               }
@@ -831,7 +868,6 @@ Siempre menciona que tus respuestas son orientativas y recomiendan consultar con
         ));
       } finally {
         setIsLoading(false);
-        setInput(''); // ✅ Limpiar input al final
       }
     }
   }, [input, isLoading, sendMessageToAPI, currentConsultationType.id]);
@@ -848,7 +884,13 @@ Siempre menciona que tus respuestas son orientativas y recomiendan consultar con
 
   useEffect(() => {
     if (!OPENROUTER_API_KEY) {
-      console.warn('VITE_OPENROUTER_API_KEY no está configurada en las variables de entorno');
+      console.warn('⚠️ VITE_OPENROUTER_API_KEY no está configurada en las variables de entorno');
+      console.log('🔧 Para solucionar este problema:');
+      console.log('1. Crea un archivo .env en la raíz del proyecto');
+      console.log('2. Agrega: VITE_OPENROUTER_API_KEY=tu_api_key_aqui');
+      console.log('3. Reinicia el servidor de desarrollo');
+    } else {
+      console.log('✅ API Key configurada correctamente');
     }
   }, []);
 
