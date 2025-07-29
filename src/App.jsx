@@ -892,9 +892,9 @@ Siempre menciona que tus respuestas son orientativas y recomiendan consultar con
     }
   }, [currentConsultationType]);
 
-  return <APIDebugChecker />;
+  
 
- /** return (
+  return (
     <div className={`h-screen flex overflow-hidden ${
       isDark ? 'bg-slate-900 text-white' : 'bg-gray-50 text-gray-900'
     } transition-colors duration-300`}>
@@ -918,5 +918,5 @@ Siempre menciona que tus respuestas son orientativas y recomiendan consultar con
         />
       </main>
     </div>
-  );*/
+  );
 }
