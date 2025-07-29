@@ -717,20 +717,22 @@ export default function App() {
   const toggleDark = useCallback(() => setIsDark(!isDark), [isDark]);
 
   // ✅ Función de envío optimizada con useCallback
-  const response = await fetch(API_URL, {
-  method: 'POST',
-  headers: {
-    'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
-    'Content-Type': 'application/json',
-    'HTTP-Referer': window.location.origin,
-    'X-Title': 'Asistente Legal IA'
-  },
-  body: JSON.stringify({
-    model: 'anthropic/claude-3.5-sonnet',
-    messages: [
-      {
-        role: 'system',
-        content: `${currentConsultationType.prompt}
+  const sendMessageToAPI = useCallback(async (userMessage) => {
+  try {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': window.location.origin,
+        'X-Title': 'Asistente Legal IA'
+      },
+      body: JSON.stringify({
+        model: 'anthropic/claude-3.5-sonnet',
+        messages: [
+          {
+            role: 'system',
+            content: `${currentConsultationType.prompt}
 
 Especialidades:
 - Derecho Civil
@@ -747,28 +749,28 @@ ${currentConsultationType.id === 'contract' ? 'IMPORTANTE: Proporciona estructur
 
 Responde de manera clara, estructurada y profesional. Usa formato markdown cuando sea apropiado para mejorar la legibilidad.
 Siempre menciona que tus respuestas son orientativas y recomiendan consultar con un abogado para casos específicos.`
-            },, 
-      {
-        role: 'user',
-        content: userMessage
-      }
-    ],
-    temperature: 0.7,
-    max_tokens: currentConsultationType.id === 'quick' ? 300 : 1000
-  })
-});
+          },
+          {
+            role: 'user',
+            content: userMessage
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: currentConsultationType.id === 'quick' ? 300 : 1000
+      })
+    });
 
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data.choices[0].message.content;
-    } catch (error) {
-      console.error('Error calling OpenRouter API:', error);
-      return 'Lo siento, ha ocurrido un error al procesar tu consulta. Por favor, intenta nuevamente o verifica la configuración de la API.';
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
     }
-  }, [currentConsultationType]);
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('Error calling OpenRouter API:', error);
+    return 'Lo siento, ha ocurrido un error al procesar tu consulta. Por favor, intenta nuevamente o verifica la configuración de la API.';
+  }
+}, [currentConsultationType]);
 
   // ✅ Función handleSend optimizada
   const handleSend = useCallback(async () => {
