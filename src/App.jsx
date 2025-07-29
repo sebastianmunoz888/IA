@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useAppContext, CONSULTATION_TYPES } from './context/AppContext.jsx';
-import APIDebugChecker from './APIDebug.jsx';
 
 import {
   Menu, Search, Send, Scale, Sun, Moon, ChevronDown, Users,
@@ -709,16 +708,6 @@ export default function App() {
     }
     return false;
   });
-  useEffect(() => {
-    if (!OPENROUTER_API_KEY) {
-      console.error('❌ VITE_OPENROUTER_API_KEY no está configurada');
-      setMessages(prev => [...prev, {
-        type: 'system',
-        text: '⚠️ Error de configuración: La clave de API no está disponible. Contacta al administrador.',
-        timestamp: Date.now()
-      }]);
-    }
-  }, []);
 
   // Usar el contexto
   const { currentConsultationType } = useAppContext();
@@ -729,26 +718,21 @@ export default function App() {
 
   // ✅ Función de envío optimizada con useCallback
   const sendMessageToAPI = useCallback(async (userMessage) => {
-  // Verificar API key antes de hacer la llamada
-  if (!OPENROUTER_API_KEY) {
-    return '❌ Error de configuración: La clave de API no está disponible. Por favor, contacta al administrador del sistema.';
-  }
-
-  try {
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': window.location.origin,
-        'X-Title': 'Asistente Legal IA'
-      },
-      body: JSON.stringify({
-        model: 'anthropic/claude-3.5-sonnet',
-        messages: [
-          {
-            role: 'system',
-            content: `${currentConsultationType.prompt}
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'Asistente Legal IA'
+        },
+        body: JSON.stringify({
+          model: 'anthropic/claude-3.5-sonnet',
+          messages: [
+            {
+              role: 'system',
+              content: `${currentConsultationType.prompt}
 
 Especialidades:
 - Derecho Civil
@@ -765,40 +749,28 @@ ${currentConsultationType.id === 'contract' ? 'IMPORTANTE: Proporciona estructur
 
 Responde de manera clara, estructurada y profesional. Usa formato markdown cuando sea apropiado para mejorar la legibilidad.
 Siempre menciona que tus respuestas son orientativas y recomiendan consultar con un abogado para casos específicos.`
-          },
-          {
-            role: 'user',
-            content: userMessage
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: currentConsultationType.id === 'quick' ? 300 : 1000
-      })
-    });
+            },
+            {
+              role: 'user',
+              content: userMessage
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: currentConsultationType.id === 'quick' ? 300 : 1000
+        })
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('API Error:', response.status, errorData);
-      
-      if (response.status === 401) {
-        return '❌ Error de autenticación: La clave de API es inválida o ha expirado. Contacta al administrador.';
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`);
       }
-      
-      throw new Error(`API Error: ${response.status} - ${errorData.error?.message || 'Error desconocido'}`);
-    }
 
-    const data = await response.json();
-    return data.choices[0].message.content;
-  } catch (error) {
-    console.error('Error calling OpenRouter API:', error);
-    
-    if (error.message.includes('401')) {
-      return '❌ Error de autenticación: Verifica la configuración de la API key.';
+      const data = await response.json();
+      return data.choices[0].message.content;
+    } catch (error) {
+      console.error('Error calling OpenRouter API:', error);
+      return 'Lo siento, ha ocurrido un error al procesar tu consulta. Por favor, intenta nuevamente o verifica la configuración de la API.';
     }
-    
-    return `❌ Error de conexión: ${error.message}. Por favor, intenta nuevamente.`;
-  }
-}, [currentConsultationType]);
+  }, [currentConsultationType]);
 
   // ✅ Función handleSend optimizada
   const handleSend = useCallback(async () => {
@@ -891,8 +863,6 @@ Siempre menciona que tus respuestas son orientativas y recomiendan consultar con
       setMessages(prev => [...prev, modeChangeMessage]);
     }
   }, [currentConsultationType]);
-
-  
 
   return (
     <div className={`h-screen flex overflow-hidden ${
