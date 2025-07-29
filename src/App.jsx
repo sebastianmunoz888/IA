@@ -727,7 +727,8 @@ export default function App() {
       console.log('Enviando mensaje a OpenRouter API...', {
         hasApiKey: !!OPENROUTER_API_KEY,
         apiKeyLength: OPENROUTER_API_KEY?.length,
-        model: "openai/gpt-3.5-turbo"
+        model: "mistral/mistral-7b-instruct:free"
+
       });
 
       const response = await fetch(API_URL, {
