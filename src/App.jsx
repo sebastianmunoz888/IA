@@ -14,143 +14,6 @@ import {
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
 const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
-// ✅ COMPONENTE DE DIAGNÓSTICO - TEMPORAL PARA DEBUG
-const APIDebugPanel = ({ isDark }) => {
-  const [debugInfo, setDebugInfo] = useState(null);
-  const [showDebug, setShowDebug] = useState(false);
-
-  const checkAPIConfiguration = useCallback(async () => {
-    const info = {
-      hasApiKey: !!OPENROUTER_API_KEY,
-      apiKeyLength: OPENROUTER_API_KEY?.length || 0,
-      apiKeyPrefix: OPENROUTER_API_KEY ? OPENROUTER_API_KEY.substring(0, 8) + '...' : 'No disponible',
-      environment: import.meta.env.MODE,
-      allEnvVars: Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')),
-      timestamp: new Date().toISOString()
-    };
-
-    // Test simple de conectividad
-    try {
-      const testResponse = await fetch('https://openrouter.ai/api/v1/models', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      info.connectivityTest = {
-        status: testResponse.status,
-        statusText: testResponse.statusText,
-        ok: testResponse.ok
-      };
-
-      if (testResponse.ok) {
-        const models = await testResponse.json();
-        info.availableModels = models.data?.length || 0;
-      }
-    } catch (error) {
-      info.connectivityTest = {
-        error: error.message
-      };
-    }
-
-    setDebugInfo(info);
-  }, []);
-
-  useEffect(() => {
-    if (showDebug) {
-      checkAPIConfiguration();
-    }
-  }, [showDebug, checkAPIConfiguration]);
-
-  if (!showDebug) {
-    return (
-      <button
-        onClick={() => setShowDebug(true)}
-        className={`fixed bottom-4 right-4 p-3 rounded-full z-50 ${
-          isDark ? 'bg-red-600 hover:bg-red-700' : 'bg-red-500 hover:bg-red-600'
-        } text-white shadow-lg transition-all duration-200 hover:scale-110`}
-        title="Diagnóstico API"
-      >
-        🔧
-      </button>
-    );
-  }
-
-  return (
-    <div className={`fixed inset-4 z-50 ${
-      isDark ? 'bg-slate-800 border-slate-600' : 'bg-white border-gray-300'
-    } border-2 rounded-lg p-6 overflow-auto shadow-2xl`}>
-      <div className="flex justify-between items-center mb-4">
-        <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-          🔧 Diagnóstico API OpenRouter
-        </h3>
-        <button
-          onClick={() => setShowDebug(false)}
-          className="p-2 rounded hover:bg-gray-200 dark:hover:bg-slate-700"
-        >
-          <X size={20} />
-        </button>
-      </div>
-      
-      {debugInfo ? (
-        <div className={`space-y-4 text-sm ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-          <div>
-            <strong>🔑 API Key:</strong>
-            <div className={`ml-4 ${debugInfo.hasApiKey ? 'text-green-600' : 'text-red-600'}`}>
-              ✓ Configurada: {debugInfo.hasApiKey ? 'Sí' : 'No'}
-            </div>
-            {debugInfo.hasApiKey && (
-              <>
-                <div className="ml-4">📏 Longitud: {debugInfo.apiKeyLength} caracteres</div>
-                <div className="ml-4">🔍 Prefijo: {debugInfo.apiKeyPrefix}</div>
-              </>
-            )}
-          </div>
-          
-          <div>
-            <strong>🌍 Environment:</strong>
-            <div className="ml-4">Mode: {debugInfo.environment}</div>
-            <div className="ml-4">Variables VITE: {debugInfo.allEnvVars.join(', ')}</div>
-          </div>
-
-          <div>
-            <strong>🌐 Test de Conectividad:</strong>
-            {debugInfo.connectivityTest.error ? (
-              <div className="ml-4 text-red-600">❌ Error: {debugInfo.connectivityTest.error}</div>
-            ) : (
-              <div className="ml-4">
-                <div className={debugInfo.connectivityTest.ok ? 'text-green-600' : 'text-red-600'}>
-                  {debugInfo.connectivityTest.ok ? '✅' : '❌'} Status: {debugInfo.connectivityTest.status} {debugInfo.connectivityTest.statusText}
-                </div>
-                {debugInfo.availableModels && (
-                  <div className="text-green-600">📊 Modelos disponibles: {debugInfo.availableModels}</div>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
-            <strong>💡 Soluciones sugeridas:</strong>
-            <ol className="list-decimal list-inside mt-2 space-y-1">
-              <li>Verifica que VITE_OPENROUTER_API_KEY esté configurada en Render (o tu entorno de despliegue)</li>
-              <li>Asegúrate de que la API key sea válida y tenga créditos</li>
-              <li>Redespliega la aplicación después de configurar las variables</li>
-              <li>Verifica que la API key tenga permisos para el modelo que estás intentando usar (ej. 'anthropic/claude-3.5-sonnet')</li>
-            </ol>
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="animate-spin mr-2" size={20} />
-          Ejecutando diagnóstico...
-        </div>
-      )}
-    </div>
-  );
-};
-
 // ✅ MOVER ESTOS COMPONENTES FUERA DEL COMPONENTE PRINCIPAL
 // Loading Animation Component
 const LoadingDots = React.memo(() => {
@@ -602,7 +465,7 @@ const ChatWindow = React.memo(({ messages, isLoading, isDark }) => {
                 isDark ? 'text-slate-300' : 'text-gray-600'
               }`}>
                 {currentConsultationType.id === 'general' 
-                  ? 'Soy tu asistente legal especializado en derecho colombiano. Puedo ayudarte con consultas profesionales en diversas áreas.' 
+                  ? 'Soy tu asistente legal especializado en derecho colombiano. Puedo ayudarte con consultas profesionales en diversas áreas.'
                   : `Modo especializado en ${currentConsultationType.name.toLowerCase()}. Optimizado para brindarte respuestas específicas y precisas.`
                 }
               </p>
@@ -632,15 +495,17 @@ const ChatWindow = React.memo(({ messages, isLoading, isDark }) => {
                         </span>
                       )}
                     </h4>
-                    <p className={`${isDark ? 'text-slate-400' : 'text-gray-600'} text-sm mb-4`}>
+                    <p className={`text-sm mb-3 ${
+                      isDark ? 'text-slate-400' : 'text-gray-600'
+                    }`}>
                       {card.description}
                     </p>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-1">
                       {card.examples.map((example, i) => (
                         <span 
-                          key={i} 
-                          className={`text-xs px-3 py-1 rounded-full ${
-                            isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-700'
+                          key={i}
+                          className={`text-xs px-2 py-1 rounded-full ${
+                            isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-600'
                           }`}
                         >
                           {example}
@@ -653,39 +518,56 @@ const ChatWindow = React.memo(({ messages, isLoading, isDark }) => {
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
-            {messages.map((message, index) => (
+          <div className="space-y-6 max-w-4xl mx-auto">
+            {messages.map((msg, idx) => (
               <div 
-                key={index} 
-                className={`flex ${
-                  message.type === 'user' ? 'justify-end' : 'justify-start'
+                key={`${msg.type}-${idx}-${msg.timestamp || idx}`}
+                className={`flex animate-in slide-in-from-bottom-4 duration-500 ${
+                  msg.type === 'user' ? 'justify-end' : 
+                  msg.type === 'system' ? 'justify-center' : 'justify-start'
                 }`}
+                style={{ animationDelay: `${idx * 100}ms` }}
               >
-                <div 
-                  className={`p-4 rounded-lg max-w-[70%] ${
-                    message.type === 'user' 
-                      ? 'bg-blue-600 text-white rounded-br-none' 
-                      : 'bg-gray-200 text-gray-900 rounded-bl-none dark:bg-slate-700 dark:text-white'
-                  }`}
-                >
-                  <p>{message.text}</p>
-                  {message.timestamp && (
-                    <span className={`block text-right mt-2 text-xs ${
-                      message.type === 'user' ? 'text-blue-200' : 'text-gray-500 dark:text-slate-400'
-                    }`}>
-                      {new Date(message.timestamp).toLocaleTimeString()}
-                    </span>
-                  )}
-                </div>
+                {/* Mensaje del sistema */}
+                {msg.type === 'system' ? (
+                  <div className={`max-w-md px-4 py-2 rounded-full text-center ${
+                    isDark ? 'bg-slate-700/50 text-slate-300' : 'bg-blue-100/50 text-blue-700'
+                  } backdrop-blur-sm text-sm`}>
+                    {msg.text}
+                  </div>
+                ) : (
+                  /* Mensajes normales */
+                  <div className={`max-w-[85%] ${
+                    msg.type === 'user' 
+                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-3xl rounded-tr-lg shadow-lg shadow-blue-500/25' 
+                      : isDark
+                        ? 'bg-slate-800/70 text-white rounded-3xl rounded-tl-lg border border-slate-700/50'
+                        : 'bg-white/70 text-gray-900 rounded-3xl rounded-tl-lg border border-gray-200/50 shadow-lg'
+                  } backdrop-blur-xl p-5 transition-all duration-300 hover:scale-[1.02]`}>
+                    
+                    {msg.type === 'ai' && (
+                      <div className="flex items-center gap-2 mb-3 opacity-60">
+                        <Scale size={16} />
+                        <span className="text-sm font-medium">
+                          Asistente Legal • {currentConsultationType.name}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {msg.isLoading ? (
+                      <div className="flex items-center gap-3">
+                        <LoadingDots />
+                        <span className="text-sm opacity-70">{msg.text}</span>
+                      </div>
+                    ) : (
+                      <div className="whitespace-pre-wrap leading-relaxed">
+                        {msg.text}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
-            {isLoading && (
-              <div className="flex justify-start">
-                <div className={`p-4 rounded-lg max-w-[70%] bg-gray-200 rounded-bl-none dark:bg-slate-700`}>
-                  <LoadingDots />
-                </div>
-              </div>
-            )}
             <div ref={messagesEndRef} />
           </div>
         )}
@@ -694,169 +576,305 @@ const ChatWindow = React.memo(({ messages, isLoading, isDark }) => {
   );
 });
 
-// Chat Input Component - MEMOIZADO
-const ChatInput = React.memo(({ onSendMessage, isLoading, isDark }) => {
-  const [input, setInput] = useState('');
+// Chat Input Component - MEMOIZADO CON useCallback
+const ChatInput = React.memo(({ input, setInput, onSend, isLoading, isDark }) => {
+  const [isFocused, setIsFocused] = useState(false);
+  const { currentConsultationType } = useAppContext();
   const textareaRef = useRef(null);
 
-  const adjustHeight = () => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-    }
-  };
-
-  useEffect(() => {
-    adjustHeight();
-  }, [input]);
-
-  const handleSendMessage = () => {
-    if (input.trim() && !isLoading) {
-      onSendMessage(input);
-      setInput('');
-    }
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === "Enter" && !e.shiftKey && !isLoading) {
       e.preventDefault();
-      handleSendMessage();
+      onSend();
     }
-  };
+  }, [onSend, isLoading]);
+
+  const handleInputChange = useCallback((e) => {
+    setInput(e.target.value);
+  }, [setInput]);
+
+  const handleFocus = useCallback(() => {
+    setIsFocused(true);
+  }, []);
+
+  const handleBlur = useCallback(() => {
+    setIsFocused(false);
+  }, []);
 
   return (
-    <div className={`p-4 border-t ${
-      isDark ? 'border-slate-700/50 bg-slate-900' : 'border-gray-200 bg-white'
-    } sticky bottom-0 z-20 shadow-lg`}>
-      <div className="flex items-end space-x-3 max-w-4xl mx-auto">
-        <textarea
-          ref={textareaRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyPress={handleKeyPress}
-          rows={1}
-          maxRows={6}
-          placeholder={isLoading ? "Esperando respuesta..." : "Escribe tu consulta legal aquí..."}
-          disabled={isLoading}
-          className={`flex-1 p-3 rounded-xl resize-none overflow-hidden focus:outline-none transition-all duration-200 ${
-            isDark 
-              ? 'bg-slate-800 border border-slate-700 text-white placeholder-slate-400 focus:border-blue-500' 
-              : 'bg-gray-100 border border-gray-200 text-gray-900 placeholder-gray-500 focus:border-blue-500'
-          }`}
-          style={{ minHeight: '50px' }}
-        />
-        <button
-          onClick={handleSendMessage}
-          disabled={!input.trim() || isLoading}
-          className={`p-3 rounded-full transition-all duration-300 ${
-            input.trim() && !isLoading 
-              ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg' 
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-slate-700 dark:text-slate-400'
-          } flex items-center justify-center`}
-        >
-          {isLoading ? <Loader2 size={24} className="animate-spin" /> : <Send size={24} />}
-        </button>
+    <footer className={`${
+      isDark 
+        ? 'bg-slate-900/95 border-slate-700/50' 
+        : 'bg-white/95 border-gray-200'
+    } backdrop-blur-xl border-t transition-all duration-300 sticky bottom-0`}>
+      <div className="p-6 max-w-4xl mx-auto">
+        
+        {/* Indicador de modo actual */}
+        {currentConsultationType.id !== 'general' && (
+          <div className={`mb-4 p-3 rounded-xl ${
+            isDark ? 'bg-slate-800/50 border border-slate-700/50' : 'bg-blue-50/50 border border-blue-200/50'
+          } backdrop-blur-sm`}>
+            <div className="flex items-center gap-2">
+              <span className="text-lg">{currentConsultationType.icon}</span>
+              <span className={`text-sm font-medium ${
+                isDark ? 'text-slate-300' : 'text-blue-700'
+              }`}>
+                Modo: {currentConsultationType.name}
+              </span>
+            </div>
+          </div>
+        )}
+
+        <div className={`flex gap-4 transition-all duration-300 ${
+          isFocused ? 'scale-[1.02]' : ''
+        }`}>
+          <div className="flex-1 relative">
+            <textarea
+              ref={textareaRef}
+              className={`w-full px-6 py-4 rounded-2xl resize-none transition-all duration-300 ${
+                isDark 
+                  ? 'bg-slate-800/50 border-2 border-slate-700 text-white placeholder-slate-400 focus:border-blue-500 focus:bg-slate-800' 
+                  : 'bg-gray-50/50 border-2 border-gray-200 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:bg-white'
+              } focus:ring-4 focus:ring-blue-500/20 focus:outline-none backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed`}
+              placeholder={isLoading ? "Procesando consulta..." : currentConsultationType.placeholder}
+              value={input}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              disabled={isLoading}
+              rows="1"
+              style={{ minHeight: '56px', maxHeight: '120px' }}
+            />
+            <MessageSquare 
+              className={`absolute right-4 top-1/2 transform -translate-y-1/2 transition-colors duration-200 ${
+                isFocused 
+                  ? 'text-blue-500' 
+                  : isDark ? 'text-slate-400' : 'text-gray-400'
+              }`} 
+              size={20} 
+            />
+          </div>
+          
+          <button
+            className={`px-8 py-4 rounded-2xl font-medium transition-all duration-300 transform hover:scale-105 disabled:scale-100 flex items-center gap-3 shadow-lg ${
+              isLoading || !input.trim()
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-blue-500/25'
+            } text-white disabled:shadow-none`}
+            onClick={onSend}
+            disabled={isLoading || !input.trim()}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 size={20} className="animate-spin" />
+                <span>Enviando...</span>
+              </>
+            ) : (
+              <>
+                <span>Enviar</span>
+                <Send size={20} />
+              </>
+            )}
+          </button>
+        </div>
+        
+        <div className={`mt-4 text-xs text-center ${
+          isDark ? 'text-slate-400' : 'text-gray-500'
+        }`}>
+          <span className="inline-flex items-center gap-1">
+            <Scale size={12} />
+            Las respuestas son orientativas. Consulta con un abogado para casos específicos.
+          </span>
+        </div>
       </div>
-      <p className={`text-xs mt-2 text-center ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-        IA Legal Pro puede cometer errores. Verifica la información.
-      </p>
-    </div>
+    </footer>
   );
 });
 
-// ✅ MOVER ESTOS COMPONENTES FUERA DEL COMPONENTE PRINCIPAL
-// Loading Animation Component
-// Moved to the top with other components
-
-// Floating particles background - MEMOIZADO
-// Moved to the top with other components
-
-// Menu Section Component - MEMOIZADO
-// Moved to the top with other components
-
-// Sidebar Component - MEMOIZADO
-// Moved to the top with other components
-
-// Chat Header Component - MEMOIZADO
-// Moved to the top with other components
-
-// Chat Window Component - MEMOIZADO
-// Moved to the top with other components
-
-// Chat Input Component - MEMOIZADO
-// Moved to the top with other components
-
-
-// Main App Component
-function App() {
+// ✅ Aquí empieza el componente principal
+export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isDark, setIsDark] = useState(true); // Default to dark mode
+  const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return (
+        localStorage.getItem('darkMode') === 'true' ||
+        window.matchMedia('(prefers-color-scheme: dark)').matches
+      );
+    }
+    return false;
+  });
 
-  const { currentConsultationType, changeConsultationType } = useAppContext();
+  // Usar el contexto
+  const { currentConsultationType } = useAppContext();
 
-  const toggleSidebar = useCallback(() => {
-    setSidebarOpen(prev => !prev);
-  }, []);
+  // ✅ useCallback para funciones que se pasan como props
+  const toggleSidebar = useCallback(() => setSidebarOpen(!sidebarOpen), [sidebarOpen]);
+  const toggleDark = useCallback(() => setIsDark(!isDark), [isDark]);
 
-  const toggleDark = useCallback(() => {
-    setIsDark(prev => !prev);
-  }, []);
-
-  const fetchAIResponse = useCallback(async (userMessage) => {
-    setIsLoading(true);
-    const newMessage = {
-      type: 'user',
-      text: userMessage,
-      timestamp: Date.now()
-    };
-    setMessages(prev => [...prev, newMessage]);
+  // ✅ Función API corregida - usando la constante OPENROUTER_API_KEY
+  const sendMessageToAPI = useCallback(async (userMessage) => {
+    // ✅ Verificar que la API key existe
+    if (!OPENROUTER_API_KEY) {
+      console.error('OPENROUTER_API_KEY no está definida');
+      return 'Error: API key no configurada. Por favor, configura VITE_OPENROUTER_API_KEY en las variables de entorno.';
+    }
 
     try {
+      console.log('Enviando mensaje a OpenRouter API...', {
+        hasApiKey: !!OPENROUTER_API_KEY,
+        apiKeyLength: OPENROUTER_API_KEY?.length,
+        model: 'anthropic/claude-3.5-sonnet'
+      });
+
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`, // ✅ Usar la constante
+          'Content-Type': 'application/json',
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'Asistente Legal IA'
         },
         body: JSON.stringify({
-          model: "anthropic/claude-3.5-sonnet", // O el modelo que prefieras de OpenRouter
+          model: 'anthropic/claude-3.5-sonnet',
           messages: [
-            { role: "system", content: "You are a helpful legal assistant specializing in Colombian law. Provide precise and professional legal advice based on the user's queries." },
-            ...messages.map(msg => ({ role: msg.type === 'user' ? 'user' : 'assistant', content: msg.text })),
-            { role: "user", content: userMessage }
+            {
+              role: 'system',
+              content: `${currentConsultationType.prompt}
+
+Especialidades:
+- Derecho Civil
+- Derecho Laboral  
+- Derecho Corporativo
+- Derecho Comercial
+- Derecho de Familia
+- Derecho Penal
+
+MODO ACTUAL: ${currentConsultationType.name}
+${currentConsultationType.id === 'quick' ? 'IMPORTANTE: Mantén respuestas concisas (máximo 200 palabras).' : ''}
+${currentConsultationType.id === 'document' ? 'IMPORTANTE: Enfócate en análisis detallado de cláusulas, riesgos y recomendaciones.' : ''}
+${currentConsultationType.id === 'contract' ? 'IMPORTANTE: Proporciona estructuras de contratos y cláusulas modelo.' : ''}
+
+Responde de manera clara, estructurada y profesional. Usa formato markdown cuando sea apropiado para mejorar la legibilidad.
+Siempre menciona que tus respuestas son orientativas y recomiendan consultar con un abogado para casos específicos.`
+            },
+            {
+              role: 'user',
+              content: userMessage
+            }
           ],
-          route: currentConsultationType.id !== 'general' ? currentConsultationType.id : undefined, // Ejemplo de cómo podrías enviar el tipo de consulta
-        }),
+          temperature: 0.7,
+          max_tokens: currentConsultationType.id === 'quick' ? 300 : 1000
+        })
+      });
+
+      console.log('Respuesta de la API:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`API Error: ${response.status} - ${errorData.message || response.statusText}`);
+        const errorText = await response.text();
+        console.error('Error de la API:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
+        throw new Error(`API Error: ${response.status} - ${response.statusText}`);
       }
 
       const data = await response.json();
-      const aiMessage = {
-        type: 'assistant',
-        text: data.choices[0].message.content,
-        timestamp: Date.now()
-      };
-      setMessages(prev => [...prev, aiMessage]);
+      console.log('Datos recibidos:', data);
+      
+      return data.choices[0].message.content;
     } catch (error) {
       console.error('Error calling OpenRouter API:', error);
-      setMessages(prev => [...prev, {
-        type: 'system',
-        text: `❌ Error: No se pudo obtener respuesta de la API. ${error.message}. Por favor, verifica tu configuración y conexión.`,
+      
+      // ✅ Mensaje de error más específico
+      if (error.message.includes('401')) {
+        return 'Error de autenticación: La API key parece ser inválida o ha expirado. Por favor, verifica tu configuración en las variables de entorno.';
+      } else if (error.message.includes('403')) {
+        return 'Error de permisos: No tienes acceso a este modelo o has excedido tu cuota.';
+      } else if (error.message.includes('429')) {
+        return 'Error de límite de velocidad: Has hecho demasiadas solicitudes. Espera un momento antes de intentar nuevamente.';
+      } else {
+        return `Error al procesar tu consulta: ${error.message}. Por favor, intenta nuevamente.`;
+      }
+    }
+  }, [currentConsultationType]);
+
+  // ✅ Función handleSend optimizada
+  const handleSend = useCallback(async () => {
+    if (input.trim() && !isLoading) {
+      const userMessage = input.trim();
+      
+      // Agregar mensaje del usuario
+      setMessages(prev => [...prev, { 
+        type: 'user', 
+        text: userMessage,
         timestamp: Date.now()
       }]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [messages, currentConsultationType]); // Dependencias para useCallback
+      
+      setIsLoading(true);
+      setInput(''); // ✅ Limpiar input inmediatamente
+      
+      const tempId = Date.now();
+      const loadingMessage = currentConsultationType.id === 'quick' 
+        ? 'Generando respuesta rápida...'
+        : currentConsultationType.id === 'document'
+        ? 'Analizando documento...'
+        : currentConsultationType.id === 'contract'
+        ? 'Preparando estructura de contrato...'
+        : 'Analizando tu consulta legal...';
 
-  // Efecto para aplicar la clase 'dark' al <html>
+      // Agregar mensaje de carga
+      setMessages(prev => [...prev, { 
+        type: 'ai', 
+        text: loadingMessage, 
+        isLoading: true,
+        id: tempId,
+        timestamp: Date.now()
+      }]);
+
+      try {
+        const aiResponse = await sendMessageToAPI(userMessage);
+        
+        // Reemplazar mensaje de carga con respuesta
+        setMessages(prev => prev.map(msg => 
+          msg.id === tempId 
+            ? { 
+                type: 'ai', 
+                text: aiResponse, 
+                isLoading: false,
+                timestamp: Date.now()
+              }
+            : msg
+        ));
+      } catch (error) {
+        console.error('Error en handleSend:', error);
+        setMessages(prev => prev.map(msg => 
+          msg.id === tempId 
+            ? { 
+                type: 'ai', 
+                text: 'Ha ocurrido un error inesperado. Por favor, verifica tu conexión e intenta nuevamente.',
+                isLoading: false,
+                timestamp: Date.now()
+              }
+            : msg
+        ));
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  }, [input, isLoading, sendMessageToAPI, currentConsultationType.id]);
+
+  // ✅ Efectos optimizados
   useEffect(() => {
+    localStorage.setItem('darkMode', isDark.toString());
     if (isDark) {
       document.documentElement.classList.add('dark');
     } else {
@@ -866,7 +884,13 @@ function App() {
 
   useEffect(() => {
     if (!OPENROUTER_API_KEY) {
-      console.warn('VITE_OPENROUTER_API_KEY no está configurada en las variables de entorno');
+      console.warn('⚠️ VITE_OPENROUTER_API_KEY no está configurada en las variables de entorno');
+      console.log('🔧 Para solucionar este problema:');
+      console.log('1. Crea un archivo .env en la raíz del proyecto');
+      console.log('2. Agrega: VITE_OPENROUTER_API_KEY=tu_api_key_aqui');
+      console.log('3. Reinicia el servidor de desarrollo');
+    } else {
+      console.log('✅ API Key configurada correctamente');
     }
   }, []);
 
@@ -897,13 +921,14 @@ function App() {
       <main className="flex-1 flex flex-col lg:ml-80 min-w-0">
         <ChatHeader onToggleSidebar={toggleSidebar} isDark={isDark} />
         <ChatWindow messages={messages} isLoading={isLoading} isDark={isDark} />
-        <ChatInput onSendMessage={fetchAIResponse} isLoading={isLoading} isDark={isDark} />
+        <ChatInput 
+          input={input} 
+          setInput={setInput} 
+          onSend={handleSend} 
+          isLoading={isLoading}
+          isDark={isDark}
+        />
       </main>
-
-      {/* Componente de diagnóstico flotante */}
-      <APIDebugPanel isDark={isDark} />
     </div>
   );
 }
-
-export default App;
