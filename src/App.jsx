@@ -727,7 +727,7 @@ export default function App() {
       console.log('Enviando mensaje a OpenRouter API...', {
         hasApiKey: !!OPENROUTER_API_KEY,
         apiKeyLength: OPENROUTER_API_KEY?.length,
-        model: 'anthropic/claude-3.5-sonnet'
+        model: "openai/gpt-3.5-turbo"
       });
 
       const response = await fetch(API_URL, {
