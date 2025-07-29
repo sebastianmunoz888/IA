@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Legal IA",
+    "slug": "ia-legal",
+    "version": "1.0.0",
+    "sdkVersion": "50.0.0",
+    "jsEngine": "jsc",
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "listUnknownPackages": false
+      }
+    },
+    "extra": {
+      "VITE_OPENROUTER_API_KEY": "tu_api_key_aqui",
+      "eas": {
+        "projectId": "493076ef-4121-41a4-919c-7f736fb24b4a"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/493076ef-4121-41a4-919c-7f736fb24b4a"
+    },
+    "android": {},
+    "ios": {},
+    "owner": "sebastianmunoz8"
+  }
+}

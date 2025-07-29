@@ -1,0 +1,51 @@
+/* src/animations.css - Animaciones mejoradas para partículas */
+
+@keyframes float-particle {
+  0% { 
+    transform: translateY(0px) scale(1); 
+    opacity: 0.3;
+  }
+  100% { 
+    transform: translateY(-20px) scale(1.2); 
+    opacity: 0.8;
+  }
+}
+
+@keyframes drift-particle {
+  0% { 
+    transform: translateX(0px) rotate(0deg); 
+  }
+  25% { 
+    transform: translateX(30px) rotate(90deg); 
+  }
+  50% { 
+    transform: translateX(60px) rotate(180deg); 
+  }
+  75% { 
+    transform: translateX(30px) rotate(270deg); 
+  }
+  100% { 
+    transform: translateX(0px) rotate(360deg); 
+  }
+}
+
+/* Animación suave para elementos que aparecen */
+@keyframes slide-in-from-bottom {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Clases utilitarias */
+.animate-in {
+  animation: slide-in-from-bottom 0.5s ease-out forwards;
+}
+
+.slide-in-from-bottom-4 {
+  animation: slide-in-from-bottom 0.4s ease-out forwards;
+}
